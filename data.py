@@ -8,9 +8,16 @@ class Dataset:
     """A class that can be used to load and store the dataset."""
 
     def __init__(self, path):
+        self._path = path
         self._daic_labels = self.load_daic_labels(path)
-        self._daic_openface_features = self.load_daic_openface_features(path)
+        self._daic_openface_features = self.load_daic_openface_features()
+        self._daic_mfcc_features = self.load_daic_mfcc_features()
         self._min_max_values = self.find_min_max()
+
+    @property
+    def path(self):
+        "Protection for path variable"
+        return self._path
 
     @property
     def daic_labels(self):
@@ -21,6 +28,11 @@ class Dataset:
     def daic_openface_features(self):
         """Protection for the dataset."""
         return self._daic_openface_features
+
+    @property
+    def daic_mfcc_features(self):
+        """Protection for the dataset."""
+        return self._daic_mfcc_features
 
     @property
     def min_max_values(self):
@@ -49,18 +61,58 @@ class Dataset:
                 }
         return loaded_labels
 
-    def load_daic_openface_features(
+    # def load_daic_openface_features(
+    #     self,
+    #     path: Path,
+    # ) -> Dict[str, Dict[str, pd.DataFrame]]:
+    #     """TODO"""
+    #     features_path = path / "openface_features"
+    #     if not Path.exists(features_path):
+    #         print("Directory does not exist. Check input feature directory.")
+    #     loaded_features: Dict[str, Dict] = {"dev": {}, "train": {}, "test": {}}
+    #     dev_path_generator = (features_path / "dev").glob("*")
+    #     train_path_generator = (features_path / "train").glob("*")
+    #     test_path_generator = (features_path / "test").glob("*")
+    #     generators = {
+    #         "dev": dev_path_generator,
+    #         "train": train_path_generator,
+    #         "test": test_path_generator,
+    #     }
+    #     for dataset_split, subset_dict in loaded_features.items():
+    #         gen = generators[dataset_split]
+    #         for path in gen:
+    #             str_path = str(path)
+    #             start = str_path.rindex("\\")
+    #             end = str_path.rindex("_")
+    #             participant_id = str_path[start + 1 : end]
+    #             full_path = path / (
+    #                 "features/" + participant_id + "_OpenFace2.1.0_Pose_gaze_AUs.csv"
+    #             )
+    #             participant_id_df = pd.read_csv(full_path)
+    #             participant_id_df.columns = participant_id_df.columns.str.replace(
+    #                 " ", ""
+    #             )
+    #             subset_dict[participant_id] = participant_id_df
+    #             # loaded_features[dataset_split][participant_id] = feature
+    #         if not subset_dict:
+    #             print(
+    #                 "No samples loaded, check the samples are available in the input directory."
+    #             )
+    #     return loaded_features
+
+    def load_daic_base_features(
         self,
         path: Path,
+        feature_type: str,
+        delimeter: str,
     ) -> Dict[str, Dict[str, pd.DataFrame]]:
         """TODO"""
-        features_path = path / "openface_features"
-        if not Path.exists(features_path):
-            print("Directory does not exist. Check input feature directory.")
+        if not Path.exists(path):
+            print("Directory does not exist. Check input feature directory")
         loaded_features: Dict[str, Dict] = {"dev": {}, "train": {}, "test": {}}
-        dev_path_generator = (features_path / "dev").glob("*")
-        train_path_generator = (features_path / "train").glob("*")
-        test_path_generator = (features_path / "test").glob("*")
+        dev_path_generator = (path / "dev").glob("*")
+        train_path_generator = (path / "train").glob("*")
+        test_path_generator = (path / "test").glob("*")
         generators = {
             "dev": dev_path_generator,
             "train": train_path_generator,
@@ -74,9 +126,11 @@ class Dataset:
                 end = str_path.rindex("_")
                 participant_id = str_path[start + 1 : end]
                 full_path = path / (
-                    "features/" + participant_id + "_OpenFace2.1.0_Pose_gaze_AUs.csv"
+                    "features/"
+                    + participant_id
+                    + feature_type  # "_OpenFace2.1.0_Pose_gaze_AUs.csv"
                 )
-                participant_id_df = pd.read_csv(full_path)
+                participant_id_df = pd.read_csv(full_path, sep=delimeter)
                 participant_id_df.columns = participant_id_df.columns.str.replace(
                     " ", ""
                 )
@@ -87,6 +141,20 @@ class Dataset:
                     "No samples loaded, check the samples are available in the input directory."
                 )
         return loaded_features
+
+    def load_daic_openface_features(self) -> Dict[str, Dict[str, pd.DataFrame]]:
+        """TODO"""
+        feature_path = self.path / "openface_features"
+        feature_type = "_OpenFace2.1.0_Pose_gaze_AUs.csv"
+        delimeter = ","
+        return self.load_daic_base_features(feature_path, feature_type, delimeter)
+
+    def load_daic_mfcc_features(self) -> Dict[str, Dict[str, pd.DataFrame]]:
+        """TODO"""
+        feature_path = self.path / "mfcc_features"
+        feature_type = "_OpenSMILE2.3.0_mfcc.csv"
+        delimeter = ";"
+        return self.load_daic_base_features(feature_path, feature_type, delimeter)
 
     def find_min_max(self):
         """Finds the minimum and maximum values of all feature for normalisation."""
