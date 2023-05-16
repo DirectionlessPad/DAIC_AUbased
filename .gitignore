@@ -130,7 +130,3 @@ dmypy.json
 
 # Data
 daic_dataset/
-openface_features/
-daic_labels/
-resnet_features/
-extract_resnet_features.py

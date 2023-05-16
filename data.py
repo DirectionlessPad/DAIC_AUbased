@@ -12,7 +12,7 @@ class Dataset:
         self._daic_labels = self.load_daic_labels(path)
         self._daic_openface_features = self.load_daic_openface_features()
         self._daic_mfcc_features = self.load_daic_mfcc_features()
-        self._min_max_values = self.find_min_max()
+        # self._min_max_values = self.find_min_max()
 
     @property
     def path(self):
