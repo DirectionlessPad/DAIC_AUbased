@@ -10,6 +10,8 @@ class Dataset:
     def __init__(self, path):
         self._path = path
         self._daic_labels = self.load_daic_labels(path)
+        # self._daic_openface_features = None
+        # self._daic_mfcc_features = None
         self._daic_openface_features = self.load_daic_openface_features()
         self._daic_mfcc_features = self.load_daic_mfcc_features()
         # self._min_max_values = self.find_min_max()
@@ -34,10 +36,10 @@ class Dataset:
         """Protection for the dataset."""
         return self._daic_mfcc_features
 
-    @property
-    def min_max_values(self):
-        """Protection for the dataset."""
-        return self._min_max_values
+    # @property
+    # def min_max_values(self):
+    #     """Protection for the dataset."""
+    #     return self._min_max_values
 
     def load_daic_labels(self, path: Path) -> Dict[str, Dict[str, Dict[str, int]]]:
         """Loads the depression labels for all subjects."""
