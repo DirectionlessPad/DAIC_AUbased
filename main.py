@@ -18,4 +18,5 @@ averaged_mfcc = mfcc_timestamp_average(
     DAIC.daic_openface_features,
     processed_storage,
 )
+### At some point finish running this for the test data. ###
 # breakpoint()

@@ -13,7 +13,9 @@ def mfcc_timestamp_average(
 ) -> List[Dict[str, Dict[str, pd.DataFrame]]]:
     """Function that averages the mfcc features for each video frame."""
     averaged_mfcc_features: Dict[str, Dict] = {"dev": {}, "train": {}, "test": {}}
+    print("starting")
     for subset, subjects in mfcc_features.items():
+        print(subset)
         for subject_id, subject_df in subjects.items():
             video_frames = openface_features[subset][subject_id].shape[0]
             audio_frames = subject_df.shape[0]
@@ -103,3 +105,16 @@ def mfcc_timestamp_average(
             # breakpoint()
             print(subject_id)
     return [openface_features, averaged_mfcc_features]
+
+
+def concatenate_video_audio(
+    video: Dict[str, pd.DataFrame], audio: Dict[str, pd.DataFrame]
+) -> Dict[str, pd.DataFrame]:
+    """TODO"""
+    multimodal: Dict = {}
+    for subject_id, subject_df in video.items():
+        video_df = subject_df
+        audio_df = audio[subject_id]
+        frames = [video_df, audio_df]
+        multimodal[subject_id] = pd.concat(frames, axis=1)
+    return multimodal

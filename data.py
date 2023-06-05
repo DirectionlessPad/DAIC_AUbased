@@ -4,6 +4,30 @@ from typing import Dict
 import pandas as pd
 
 
+# def load_concatenated_aud_vid(
+#     file_path: Path, feature_type: str, delimeter: str
+# ) -> Dict[str, Dict[str, pd.DataFrame]]:
+#     """TODO"""
+#     if not Path.exists(file_path):
+#         print("Directory does not exist. Check input feature directory")
+#     loaded_features: Dict = {}
+#     generator = (file_path).glob("*")
+#     for path in generator:
+#         str_path = str(path)
+#         start = str_path.rindex("\\")
+#         end = str_path.rindex("_")
+#         participant_id = str_path[start + 1 : end]
+#         full_path = path / (participant_id + feature_type)
+#         participant_id_df = pd.read_csv(full_path, sep=delimeter)
+#         participant_id_df.columns = participant_id_df.columns.str.replace(" ", "")
+#         loaded_features[participant_id] = participant_id_df
+#     if not loaded_features:
+#         print(
+#             "No samples loaded, check the samples are available in the input directory."
+#         )
+#     return loaded_features
+
+
 class Dataset:
     """A class that can be used to load and store the dataset."""
 
@@ -63,58 +87,19 @@ class Dataset:
                 }
         return loaded_labels
 
-    # def load_daic_openface_features(
-    #     self,
-    #     path: Path,
-    # ) -> Dict[str, Dict[str, pd.DataFrame]]:
-    #     """TODO"""
-    #     features_path = path / "openface_features"
-    #     if not Path.exists(features_path):
-    #         print("Directory does not exist. Check input feature directory.")
-    #     loaded_features: Dict[str, Dict] = {"dev": {}, "train": {}, "test": {}}
-    #     dev_path_generator = (features_path / "dev").glob("*")
-    #     train_path_generator = (features_path / "train").glob("*")
-    #     test_path_generator = (features_path / "test").glob("*")
-    #     generators = {
-    #         "dev": dev_path_generator,
-    #         "train": train_path_generator,
-    #         "test": test_path_generator,
-    #     }
-    #     for dataset_split, subset_dict in loaded_features.items():
-    #         gen = generators[dataset_split]
-    #         for path in gen:
-    #             str_path = str(path)
-    #             start = str_path.rindex("\\")
-    #             end = str_path.rindex("_")
-    #             participant_id = str_path[start + 1 : end]
-    #             full_path = path / (
-    #                 "features/" + participant_id + "_OpenFace2.1.0_Pose_gaze_AUs.csv"
-    #             )
-    #             participant_id_df = pd.read_csv(full_path)
-    #             participant_id_df.columns = participant_id_df.columns.str.replace(
-    #                 " ", ""
-    #             )
-    #             subset_dict[participant_id] = participant_id_df
-    #             # loaded_features[dataset_split][participant_id] = feature
-    #         if not subset_dict:
-    #             print(
-    #                 "No samples loaded, check the samples are available in the input directory."
-    #             )
-    #     return loaded_features
-
     def load_daic_base_features(
         self,
-        path: Path,
+        file_path: Path,
         feature_type: str,
         delimeter: str,
     ) -> Dict[str, Dict[str, pd.DataFrame]]:
         """TODO"""
-        if not Path.exists(path):
+        if not Path.exists(file_path):
             print("Directory does not exist. Check input feature directory")
         loaded_features: Dict[str, Dict] = {"dev": {}, "train": {}, "test": {}}
-        dev_path_generator = (path / "dev").glob("*")
-        train_path_generator = (path / "train").glob("*")
-        test_path_generator = (path / "test").glob("*")
+        dev_path_generator = (file_path / "dev").glob("*")
+        train_path_generator = (file_path / "train").glob("*")
+        test_path_generator = (file_path / "test").glob("*")
         generators = {
             "dev": dev_path_generator,
             "train": train_path_generator,
@@ -158,13 +143,49 @@ class Dataset:
         delimeter = ";"
         return self.load_daic_base_features(feature_path, feature_type, delimeter)
 
+    def load_daic_processed_features(
+        self, file_path: Path, feature_type: str, delimeter: str
+    ) -> Dict[str, Dict[str, pd.DataFrame]]:
+        """TODO"""
+        if not Path.exists(file_path):
+            print("Directory does not exist. Check input feature directory")
+        loaded_features: Dict = {}
+        generator = (file_path).glob("*")
+        for path in generator:
+            str_path = str(path)
+            start = str_path.rindex("\\")
+            end = str_path.rindex("_")
+            participant_id = str_path[start + 1 : end]
+            full_path = path / ("features/" + participant_id + feature_type)
+            participant_id_df = pd.read_csv(full_path, sep=delimeter)
+            participant_id_df.columns = participant_id_df.columns.str.replace(" ", "")
+            loaded_features[participant_id] = participant_id_df
+        if not loaded_features:
+            print(
+                "No samples loaded, check the samples are available in the input directory."
+            )
+        return loaded_features
+
+    def load_processed_openface(self, subset: str):
+        """TODO"""
+        feature_path = Path("daic_processed_1/openface_features/" + subset)
+        feature_type = "_OpenFace2.1.0_Pose_gaze_AUs.csv"
+        delimeter = ","
+        return self.load_daic_processed_features(feature_path, feature_type, delimeter)
+
+    def load_processed_mfcc(self, subset: str):
+        """TODO"""
+        feature_path = Path("daic_processed_1/mfcc_features/" + subset)
+        feature_type = "_OpenSMILE2.3.0_mfcc.csv"
+        delimeter = ";"
+        return self.load_daic_processed_features(feature_path, feature_type, delimeter)
+
     def find_min_max(self):
         """Finds the minimum and maximum values of all feature for normalisation."""
         # only for openface features at the moment
 
         # !!As of now this doesn't work correctly!!
         # LEAVE THIS TO DO AFTER PREPROCESSING, some of feature values for success == 0 are ridiculous and will most likely need to be zeroed
-
         min_max = {
             "min": {
                 "pose_Tx": 1000,
@@ -198,6 +219,45 @@ class Dataset:
                 "AU25_r": 1000,
                 "AU26_r": 1000,
                 "AU45_r": 1000,
+                "pcm_fftMag_mfcc[0]": 1000,
+                "pcm_fftMag_mfcc[1]": 1000,
+                "pcm_fftMag_mfcc[2]": 1000,
+                "pcm_fftMag_mfcc[3]": 1000,
+                "pcm_fftMag_mfcc[4]": 1000,
+                "pcm_fftMag_mfcc[5]": 1000,
+                "pcm_fftMag_mfcc[6]": 1000,
+                "pcm_fftMag_mfcc[7]": 1000,
+                "pcm_fftMag_mfcc[8]": 1000,
+                "pcm_fftMag_mfcc[9]": 1000,
+                "pcm_fftMag_mfcc[10]": 1000,
+                "pcm_fftMag_mfcc[11]": 1000,
+                "pcm_fftMag_mfcc[12]": 1000,
+                "pcm_fftMag_mfcc_de[0]": 1000,
+                "pcm_fftMag_mfcc_de[1]": 1000,
+                "pcm_fftMag_mfcc_de[2]": 1000,
+                "pcm_fftMag_mfcc_de[3]": 1000,
+                "pcm_fftMag_mfcc_de[4]": 1000,
+                "pcm_fftMag_mfcc_de[5]": 1000,
+                "pcm_fftMag_mfcc_de[6]": 1000,
+                "pcm_fftMag_mfcc_de[7]": 1000,
+                "pcm_fftMag_mfcc_de[8]": 1000,
+                "pcm_fftMag_mfcc_de[9]": 1000,
+                "pcm_fftMag_mfcc_de[10]": 1000,
+                "pcm_fftMag_mfcc_de[11]": 1000,
+                "pcm_fftMag_mfcc_de[12]": 1000,
+                "pcm_fftMag_mfcc_de_de[0]": 1000,
+                "pcm_fftMag_mfcc_de_de[1]": 1000,
+                "pcm_fftMag_mfcc_de_de[2]": 1000,
+                "pcm_fftMag_mfcc_de_de[3]": 1000,
+                "pcm_fftMag_mfcc_de_de[4]": 1000,
+                "pcm_fftMag_mfcc_de_de[5]": 1000,
+                "pcm_fftMag_mfcc_de_de[6]": 1000,
+                "pcm_fftMag_mfcc_de_de[7]": 1000,
+                "pcm_fftMag_mfcc_de_de[8]": 1000,
+                "pcm_fftMag_mfcc_de_de[9]": 1000,
+                "pcm_fftMag_mfcc_de_de[10]": 1000,
+                "pcm_fftMag_mfcc_de_de[11]": 1000,
+                "pcm_fftMag_mfcc_de_de[12]": 1000,
             },
             "max": {
                 "pose_Tx": 0,
@@ -231,6 +291,45 @@ class Dataset:
                 "AU25_r": 0,
                 "AU26_r": 0,
                 "AU45_r": 0,
+                "pcm_fftMag_mfcc[0]": -1000,
+                "pcm_fftMag_mfcc[1]": -1000,
+                "pcm_fftMag_mfcc[2]": -1000,
+                "pcm_fftMag_mfcc[3]": -1000,
+                "pcm_fftMag_mfcc[4]": -1000,
+                "pcm_fftMag_mfcc[5]": -1000,
+                "pcm_fftMag_mfcc[6]": -1000,
+                "pcm_fftMag_mfcc[7]": -1000,
+                "pcm_fftMag_mfcc[8]": -1000,
+                "pcm_fftMag_mfcc[9]": -1000,
+                "pcm_fftMag_mfcc[10]": -1000,
+                "pcm_fftMag_mfcc[11]": -1000,
+                "pcm_fftMag_mfcc[12]": -1000,
+                "pcm_fftMag_mfcc_de[0]": -1000,
+                "pcm_fftMag_mfcc_de[1]": -1000,
+                "pcm_fftMag_mfcc_de[2]": -1000,
+                "pcm_fftMag_mfcc_de[3]": -1000,
+                "pcm_fftMag_mfcc_de[4]": -1000,
+                "pcm_fftMag_mfcc_de[5]": -1000,
+                "pcm_fftMag_mfcc_de[6]": -1000,
+                "pcm_fftMag_mfcc_de[7]": -1000,
+                "pcm_fftMag_mfcc_de[8]": -1000,
+                "pcm_fftMag_mfcc_de[9]": -1000,
+                "pcm_fftMag_mfcc_de[10]": -1000,
+                "pcm_fftMag_mfcc_de[11]": -1000,
+                "pcm_fftMag_mfcc_de[12]": -1000,
+                "pcm_fftMag_mfcc_de_de[0]": -1000,
+                "pcm_fftMag_mfcc_de_de[1]": -1000,
+                "pcm_fftMag_mfcc_de_de[2]": -1000,
+                "pcm_fftMag_mfcc_de_de[3]": -1000,
+                "pcm_fftMag_mfcc_de_de[4]": -1000,
+                "pcm_fftMag_mfcc_de_de[5]": -1000,
+                "pcm_fftMag_mfcc_de_de[6]": -1000,
+                "pcm_fftMag_mfcc_de_de[7]": -1000,
+                "pcm_fftMag_mfcc_de_de[8]": -1000,
+                "pcm_fftMag_mfcc_de_de[9]": -1000,
+                "pcm_fftMag_mfcc_de_de[10]": -1000,
+                "pcm_fftMag_mfcc_de_de[11]": -1000,
+                "pcm_fftMag_mfcc_de_de[12]": -1000,
             },
         }
         for _, subjects in self.daic_openface_features.items():
