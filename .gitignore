@@ -131,3 +131,7 @@ dmypy.json
 # Data
 daic_dataset/
 daic_processed_1/
+original_daic/
+
+# Models
+saved_models/
