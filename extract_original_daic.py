@@ -238,11 +238,11 @@ for i in range(300, 500):
                         zip.extract(
                             file, path="original_daic/" + location + "/" + data_sample
                         )
-            # with tarfile.open(file_path) as tar:
-            #     tar.extract(
-            #         member=file_i_want, path=Path("openface_features/" + location)
-            #     )
-            file_path.unlink()
+                # with tarfile.open(file_path) as tar:
+                #     tar.extract(
+                #         member=file_i_want, path=Path("openface_features/" + location)
+                #     )
+                file_path.unlink()
         except requests.exceptions.ConnectionError:
             print(
                 "FAILED TO CONNECT AND DOWNLOAD SAMPLE NUMBER "
